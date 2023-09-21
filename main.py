@@ -46,18 +46,29 @@ def collate_list(PDF_DIRECTORY, batch_size):
     """
     pdf_files = [os.path.join(PDF_DIRECTORY, filename)
                  for filename in os.listdir(PDF_DIRECTORY) if filename.endswith(".pdf")]
+    # Sort the list from Z to A
+    pdf_files.sort()
+    #LOGprint(f'{pdf_files}  \n')
 
+    pdf_files = deal_with_overflow(pdf_files, batch_size)
+
+    # Log message. Note: Add a proper log message.
+    print('List collation DONE')
+    return(pdf_files)
+
+
+def deal_with_overflow(pdf_files, batch_size):
+    """
+    Receives complete list of pdfs, counts  pdfs that don't fit into
+    specified batch_size, adds them to a new list, converts it into pdf(overflow batch)
+    """
     if len(pdf_files) % batch_size != 0:
         overflow_pdfs = []
         num = len(pdf_files) % batch_size
         while num != 0:
-            overflow_pdfs.append(pdf_files[num])
+            overflow_pdfs.append(pdf_files.pop())
             num-=1
-        print(overflow_pdfs)
         write_batch(overflow_pdfs)
-
-    # Log message. Note: Add a proper log message.
-    print('List collation DONE')
     return(pdf_files)
 
 
@@ -84,7 +95,6 @@ def write_batch(batch):
     This function is called to write a given set of pdfs.
     You call it once per list of pdfs that you want to merge.
     """
-
     # Get a special name for new file and declare a MERGE function.
     file_name = get_file_name(OUTPUT_PDF, timestamp)
     MERGE = PyPDF2.PdfMerger()
@@ -100,8 +110,14 @@ def write_batch(batch):
 
     # Note: Add log message here.
 
+
 def run():
     pdf_list = collate_list(PDF_DIRECTORY, 3)
     chop_batches(PDF_DIRECTORY, 3, pdf_list)
 
+
 run()
+
+
+
+
