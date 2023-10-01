@@ -3,24 +3,27 @@ import os
 import datetime
 import argparse
 import random
+from settings import Settings
 
 '''
 Todo list:
-    - If batch_size doesn't divide pdf_list completely - dump the rest of pdf separately
+    [DONE] If batch_size doesn't divide pdf_list completely - dump the rest of pdf separately
     either as another batch or single pdf files:
-        - Make so that you first do batches regularly and than you do oveflow_pdfs lastly.
+        [DONE] Make so that you first do batches regularly and than you do oveflow_pdfs lastly.
         And your list has to be sorted for that to meaningfully work.
-    - Organize funcitons.
+    - Organize functions.
 
     - Build argparse options:
         - First choice:
-            - Either the full directory to pdf merge Or select particular pdfs.
-        - Input options:
-            - Batch size. How many pdfs will be merged at a time.
+            - [STUPID IDEA] Either the full directory to pdf merge Or select particular pdfs.
+            - [PARTLY] Add an option to change directory temp
+                - Do it after adding settings.py
+        - [DONE] Input options:
+            - [DONE] Batch size. How many pdfs will be merged at a time.
         - Choose the name for output file.
         - Final confirmation menu. Either proceed or repeat above process.
 
-    - Write a settings.py for often used parameters.
+    - Write a settings.py for constants. 
     - Wrap the programm in GUM.
 '''
 
@@ -29,7 +32,7 @@ year = current.year
 month = current.month
 day = current.day
 timestamp = f"{year:02d}-{month:02d}-{day:02d}"
-PDF_DIRECTORY = "/home/hades/Books/pythonpractice/pdf_combinator/input"
+PDF_DIRECTORY = "./input"
 OUTPUT_PDF = "_output.pdf"
 
 def get_file_name(OUTPUT_PDF, timestamp):
@@ -45,10 +48,9 @@ def collate_list(PDF_DIRECTORY, batch_size):
     Searches directories for .pdf file only and then compiles them into lists
     """
     pdf_files = [os.path.join(PDF_DIRECTORY, filename)
-                 for filename in os.listdir(PDF_DIRECTORY) if filename.endswith(".pdf")]
+                 for filename in os.listdir(PDF_DIRECTORY) if filename.endswith(".pdf")] 
     # Sort the list from Z to A
     pdf_files.sort()
-    #LOGprint(f'{pdf_files}  \n')
 
     pdf_files = deal_with_overflow(pdf_files, batch_size)
 
@@ -58,10 +60,10 @@ def collate_list(PDF_DIRECTORY, batch_size):
 
 
 def deal_with_overflow(pdf_files, batch_size):
-    """
-    Receives complete list of pdfs, counts  pdfs that don't fit into
+    """ 
+    Receives complete list of pdfs, counts  pdfs that don't fit into 
     specified batch_size, adds them to a new list, converts it into pdf(overflow batch)
-    """
+    """ 
     if len(pdf_files) % batch_size != 0:
         overflow_pdfs = []
         num = len(pdf_files) % batch_size
@@ -74,7 +76,7 @@ def deal_with_overflow(pdf_files, batch_size):
 
 def chop_batches(PDF_DIRECTORY, batch_size, pdf_files):
     """
-    Compiles a list with pdfs according to batch_size and...
+    Compiles a list with pdfs according to batch_size and... 
     Note: add pdf-drop if pdf_files is not divisible by batch_size.
     """
     i=0
@@ -90,7 +92,7 @@ def chop_batches(PDF_DIRECTORY, batch_size, pdf_files):
             i=0
 
 
-def write_batch(batch):
+def write_batch(batch): 
     """
     This function is called to write a given set of pdfs.
     You call it once per list of pdfs that you want to merge.
@@ -111,13 +113,40 @@ def write_batch(batch):
     # Note: Add log message here.
 
 
-def run():
-    pdf_list = collate_list(PDF_DIRECTORY, 3)
-    chop_batches(PDF_DIRECTORY, 3, pdf_list)
+def run(batch_size=1, print_table=None, output_name=None,
+        file_start=None, file_end=None,):
+
+    #Print out the whole input directory insides in a table view
+    if print_table:
+        pdf_list = collate_list(PDF_DIRECTORY, batch_size)
+
+        print('INDEX | FILE_NAME ')
+        TEMPLATE = '{index:>5} | {file_name}'
+
+        index = 1 
+        for file_name in pdf_list:
+            row = TEMPLATE.format(index=index, file_name=file_name)
+            print(row)
+            index+=1
+
+            #Dividing table to see batches more clearly.
+            if index % batch_size == 0:
+                print('\n\tNew batch:')
+
+    pdf_list = collate_list(PDF_DIRECTORY, batch_size)
+    chop_batches(PDF_DIRECTORY, batch_size, pdf_list)
 
 
-run()
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
 
+    parser.add_argument('number', type=int, help='The number')
+    parser.add_argument('-input', action='store_true', help='View inside input directory.')
+    parser.add_argument('-dir', type=str, help="Paste temp directory path if you'd like")
+    parser.add_argument('-n', type=str, help='Choose a name for your output batches')
+    parser.add_argument('-start', type=int, help='Starting pdf file')
+    parser.add_argument('-end', type=int, help='Ending pdf file')
 
-
+    args = parser.parse_args()
+    run(args.number, args.input, args.n, args.start, args.end)
 
