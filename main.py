@@ -1,9 +1,14 @@
+'''
+    To whom it may interest - excuse me, for it is not finished and lacks many features that I though of initially.
+    I am currently in a bit of a rush and can't work on this more. I hope my pet project could be usefull to you.
+'''
+
 import PyPDF2
 import os
 import datetime
 import argparse
 import random
-from settings import Settings
+import settings
 
 '''
 Todo list:
@@ -11,7 +16,7 @@ Todo list:
     either as another batch or single pdf files:
         [DONE] Make so that you first do batches regularly and than you do oveflow_pdfs lastly.
         And your list has to be sorted for that to meaningfully work.
-    - Organize functions.
+    - [DONE-ish] Organize functions.
 
     - Build argparse options:
         - First choice:
@@ -20,26 +25,22 @@ Todo list:
                 - Do it after adding settings.py
         - [DONE] Input options:
             - [DONE] Batch size. How many pdfs will be merged at a time.
-        - Choose the name for output file.
+        - [DONE] Choose the name for output file.
         - Final confirmation menu. Either proceed or repeat above process.
 
-    - Write a settings.py for constants. 
-    - Wrap the programm in GUM.
+    - [DONE] Write a settings.py for constants.
+    - [SHOULD I REALLY?] Wrap the programm in GUM.
 '''
 
-current = datetime.datetime.now()
-year = current.year
-month = current.month
-day = current.day
-timestamp = f"{year:02d}-{month:02d}-{day:02d}"
-PDF_DIRECTORY = "./input"
-OUTPUT_PDF = "_output.pdf"
+timestamp = settings.timestamp
+PDF_DIRECTORY = settings.PDF_DIRECTORY
+
+
 
 def get_file_name(OUTPUT_PDF, timestamp):
     # Adds random three digits and year,month,day before the name.
-    stampname = f"{timestamp}{OUTPUT_PDF}"
     RANDN = random.randint(100, 999)
-    stampname = f"{RANDN}{stampname}"
+    stampname = f"{timestamp}{RANDN}{OUTPUT_PDF}"
     return(stampname)
 
 
@@ -48,22 +49,22 @@ def collate_list(PDF_DIRECTORY, batch_size):
     Searches directories for .pdf file only and then compiles them into lists
     """
     pdf_files = [os.path.join(PDF_DIRECTORY, filename)
-                 for filename in os.listdir(PDF_DIRECTORY) if filename.endswith(".pdf")] 
+                 for filename in os.listdir(PDF_DIRECTORY) if filename.endswith(".pdf")]
     # Sort the list from Z to A
     pdf_files.sort()
 
     pdf_files = deal_with_overflow(pdf_files, batch_size)
 
     # Log message. Note: Add a proper log message.
-    print('List collation DONE')
+    print('[DONE]   List collation')
     return(pdf_files)
 
 
 def deal_with_overflow(pdf_files, batch_size):
-    """ 
-    Receives complete list of pdfs, counts  pdfs that don't fit into 
+    """
+    Receives complete list of pdfs, counts  pdfs that don't fit into
     specified batch_size, adds them to a new list, converts it into pdf(overflow batch)
-    """ 
+    """
     if len(pdf_files) % batch_size != 0:
         overflow_pdfs = []
         num = len(pdf_files) % batch_size
@@ -76,7 +77,7 @@ def deal_with_overflow(pdf_files, batch_size):
 
 def chop_batches(PDF_DIRECTORY, batch_size, pdf_files):
     """
-    Compiles a list with pdfs according to batch_size and... 
+    Compiles a list with pdfs according to batch_size and...
     Note: add pdf-drop if pdf_files is not divisible by batch_size.
     """
     i=0
@@ -92,7 +93,7 @@ def chop_batches(PDF_DIRECTORY, batch_size, pdf_files):
             i=0
 
 
-def write_batch(batch): 
+def write_batch(batch):
     """
     This function is called to write a given set of pdfs.
     You call it once per list of pdfs that you want to merge.
@@ -123,7 +124,7 @@ def run(batch_size=1, print_table=None, output_name=None,
         print('INDEX | FILE_NAME ')
         TEMPLATE = '{index:>5} | {file_name}'
 
-        index = 1 
+        index = 1
         for file_name in pdf_list:
             row = TEMPLATE.format(index=index, file_name=file_name)
             print(row)
@@ -140,13 +141,23 @@ def run(batch_size=1, print_table=None, output_name=None,
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('number', type=int, help='The number')
-    parser.add_argument('-input', action='store_true', help='View inside input directory.')
-    parser.add_argument('-dir', type=str, help="Paste temp directory path if you'd like")
-    parser.add_argument('-n', type=str, help='Choose a name for your output batches')
-    parser.add_argument('-start', type=int, help='Starting pdf file')
-    parser.add_argument('-end', type=int, help='Ending pdf file')
+    parser.add_argument('number', type=int, help='Your desired number of PDFs in one batch.')
+    parser.add_argument('-input', action='store_true', help='View inside input
+                        directory without making any changes.')
+    # I don't think I implemented dir funtion. I can change it in the settings.py file.
+    parser.add_argument('-dir', type=str, help="[does not work now] Paste temp directory path if you'd like")
+    parser.add_argument('-n', type=str, help='Choose part of a name for your output batches')
+    # I don't remember implementing start, end functions...
+    parser.add_argument('-start', type=int, help='[does not work now] Starting pdf file')
+    parser.add_argument('-end', type=int, help='[does not work now] Ending pdf file')
 
     args = parser.parse_args()
+
+    # Batches Name negotiation.
+    if args.n:
+        OUTPUT_PDF = f"_{args.n}.pdf"
+    else:
+        OUTPUT_PDF = settings.OUTPUT_PDF
+
     run(args.number, args.input, args.n, args.start, args.end)
 
